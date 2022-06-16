@@ -1,6 +1,6 @@
 # uWSGI build system
 
-uwsgi_version = '2.1-dev'
+uwsgi_version = '2.0.20+awingu'
 
 import os
 import re
@@ -162,9 +162,9 @@ def uniq_warnings(elements):
 
     return new_elements
 
-if uwsgi_version.endswith('-dev') and os.path.exists('%s/.git' % os.path.dirname(os.path.abspath(__file__))):
+if uwsgi_version.endswith('+awingu') and os.path.exists('%s/.git' % os.path.dirname(os.path.abspath(__file__))):
     try:
-        uwsgi_version += '-%s' % spcall('git rev-parse --short HEAD')
+        uwsgi_version += '.%s' % spcall('git rev-parse --short HEAD')
     except Exception:
         pass
 
@@ -1145,10 +1145,12 @@ class uConf(object):
             if uwsgi_os in ('Linux', 'GNU', 'GNU/kFreeBSD') or uwsgi_os.startswith('CYGWIN') or os.path.exists('/usr/lib/libuuid.so') or os.path.exists('/usr/local/lib/libuuid.so') or os.path.exists('/usr/lib64/libuuid.so') or os.path.exists('/usr/local/lib64/libuuid.so'):
                 self.libs.append('-luuid')
 
+        append_version = self.get('append_version')
         if self.get('append_version'):
-            if not self.get('append_version').startswith('-'):
-                uwsgi_version += '-'
-            uwsgi_version += self.get('append_version')
+            append_version = re.sub(r'[^0-9a-zA-Z]+', '.', append_version)
+            if not append_version.startswith('.'):
+                uwsgi_version += '.'
+            uwsgi_version += append_version
 
         if uwsgi_os in ('FreeBSD', 'GNU/kFreeBSD') and self.has_include('jail.h'):
             self.cflags.append('-DUWSGI_HAS_FREEBSD_LIBJAIL')
@@ -1202,7 +1204,7 @@ class uConf(object):
 
         self.cflags.append('-DUWSGI_VERSION="\\"' + uwsgi_version + '\\""')
 
-        uver_whole = uwsgi_version.split('-', 1)
+        uver_whole = uwsgi_version.split('+', 1)
         if len(uver_whole) == 1:
             uver_custom = ''
         else:
